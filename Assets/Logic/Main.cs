@@ -17,24 +17,72 @@ public class Main : MonoBehaviour
         {0, 0, 0, 4, 1, 9, 0, 0, 5},
         {0, 0, 0, 0, 8, 0, 0, 7, 9}
     };
-    int[,] solved;
+    int[,] solved = new int[9, 9];
 
-    int[,] problemCpy, weights;
-    int[] elements;
+    int[,] problemCpy = new int[9,9]; 
+    int[,] weights = new int[9, 9];
+    int[] elements = new int[9] {0,0,0,0,0,0,0,0,0};
+
+    public List<GameObject> rows;
+    public List<GameObject> Numbers;
+    List<Transform> toDelete = new List<Transform>();
 
     private void Start()
-    {
-        problemCpy = sudoku;
-    }
-
-    void countElements()
     {
         int x, y;
 
         for (x = 0; x < 9; x++)
             for (y = 0; y < 9; y++)
             {
-                if (problemCpy[x, y] > 0) elements[problemCpy[x, y] - 1] += 1; 
+                problemCpy[x,y] = sudoku[x,y];
+            }
+
+        DisplayTiles(problemCpy);
+
+
+    }
+    
+    void DisplayTiles(int[,] grid)
+    {
+        int x, y;
+
+        if(toDelete.Count > 0)
+        for (x = 0; x < toDelete.Count; x++)
+        {
+            Destroy(toDelete[x]);
+        }
+
+            for (x = 0; x < 9; x++)
+        {
+            for (y = 0; y < 9; y++)
+            {
+                if (grid[x,y] != 0)
+                {
+                    toDelete.Add(Instantiate(Numbers[grid[x, y] - 1], rows[x].transform.GetChild(y)).transform);
+                }
+                    
+            }
+        }
+    }
+
+    public void BDisplay() {
+        int x, y;
+
+
+
+        DisplayTiles(solved);
+    }
+
+    void countElements()
+    {
+        int x, y;
+
+        for (x = 0; x < 9; x++) elements[x] = 0;
+
+        for (x = 0; x < 9; x++)
+            for (y = 0; y < 9; y++)
+            {
+                if (problemCpy[x, y] > 0) elements[problemCpy[x, y] - 1] += 1;
             }
     }
 
@@ -140,7 +188,6 @@ public class Main : MonoBehaviour
                 }
             }
     }
-
     Vector2 GetTargetPosition(int[,] weights)
     {
         int rows = weights.GetLength(0);
@@ -162,7 +209,21 @@ public class Main : MonoBehaviour
         dist[4, 4] = 0;
 
         SortedDictionary<int, Vector2> pq = new SortedDictionary<int, Vector2>();
-        pq.Add(0, new Vector2(4, 4));
+
+        // Helper method to add or update key-value pairs in the priority queue
+        void AddOrUpdate(int key, Vector2 value)
+        {
+            if (pq.ContainsKey(key))
+            {
+                pq[key] = value;
+            }
+            else
+            {
+                pq.Add(key, value);
+            }
+        }
+
+        AddOrUpdate(0, new Vector2(4, 4));
 
         while (pq.Count > 0)
         {
@@ -193,7 +254,7 @@ public class Main : MonoBehaviour
                 if (alt < dist[x - 1, y])
                 {
                     dist[x - 1, y] = alt;
-                    pq.Add(alt, new Vector2(x - 1, y));
+                    AddOrUpdate(alt, new Vector2(x - 1, y));
                 }
             }
             if (x < rows - 1 && !visited[x + 1, y])
@@ -202,7 +263,7 @@ public class Main : MonoBehaviour
                 if (alt < dist[x + 1, y])
                 {
                     dist[x + 1, y] = alt;
-                    pq.Add(alt, new Vector2(x + 1, y));
+                    AddOrUpdate(alt, new Vector2(x + 1, y));
                 }
             }
             if (y > 0 && !visited[x, y - 1])
@@ -211,7 +272,7 @@ public class Main : MonoBehaviour
                 if (alt < dist[x, y - 1])
                 {
                     dist[x, y - 1] = alt;
-                    pq.Add(alt, new Vector2(x, y - 1));
+                    AddOrUpdate(alt, new Vector2(x, y - 1));
                 }
             }
             if (y < cols - 1 && !visited[x, y + 1])
@@ -220,7 +281,7 @@ public class Main : MonoBehaviour
                 if (alt < dist[x, y + 1])
                 {
                     dist[x, y + 1] = alt;
-                    pq.Add(alt, new Vector2(x, y + 1));
+                    AddOrUpdate(alt, new Vector2(x, y + 1));
                 }
             }
         }
@@ -228,7 +289,7 @@ public class Main : MonoBehaviour
         return new Vector2(-1, -1);
     }
 
-    void solve()
+    public void solve()
     {
         countElements();
         if (!ending())
